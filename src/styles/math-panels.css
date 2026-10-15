@@ -1,0 +1,264 @@
+/* Shared reading rhythm for the live label and the full mathematics drawer. */
+.gf-equation-card {
+  background: rgb(10 16 24 / 0.94);
+  border-color: rgb(255 255 255 / 0.13);
+}
+
+.gf-equation-card .micro {
+  letter-spacing: 0.14em;
+}
+
+.gf-equation-reading {
+  margin: 0 0 14px;
+  color: #aab5c3;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.gf-equation-surface {
+  padding: 12px 14px;
+  border: 1px solid rgb(185 245 208 / 0.1);
+  border-radius: 12px;
+  background: rgb(185 245 208 / 0.025);
+}
+
+.gf-equation {
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.gf-wave-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.6em;
+  margin-bottom: 0.45em;
+}
+
+.gf-wave-heading > span:last-child {
+  color: #93a2b3;
+  font-size: 11px;
+}
+
+.gf-wave-terms {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2em;
+}
+
+.gf-wave-terms > span:first-child {
+  padding-left: 1em;
+}
+
+.gf-equation-relations {
+  margin-top: 0.85em;
+  padding-top: 0.65em;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 0.88em;
+  color: #aab5c3;
+}
+
+.gf-equation-context {
+  margin: 0 0 0.45em;
+  color: #93a2b3;
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
+.gf-field-numerator {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2em 0;
+}
+
+.gf-probe-label,
+.gf-probe-status {
+  color: #93a2b3;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.gf-probe-status {
+  flex-shrink: 0;
+}
+
+.gf-probe-summary {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.gf-probe-summary::-webkit-details-marker {
+  display: none;
+}
+
+.gf-probe-summary svg {
+  color: #93a2b3;
+  transition: transform 180ms ease;
+}
+
+.gf-probe-disclosure[open] .gf-probe-summary svg {
+  transform: rotate(180deg);
+}
+
+.gf-probe-summary:hover > span:first-child {
+  color: var(--color-mint);
+}
+
+.gf-pipeline {
+  container-type: inline-size;
+}
+
+.gf-pipeline-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) 14px minmax(0, 0.9fr);
+  align-items: stretch;
+}
+
+.gf-pipeline-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  padding: 12px 10px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.025);
+}
+
+.gf-pipeline-caption {
+  color: #aab5c3;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.gf-pipeline-number {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: -0.04em;
+}
+
+.gf-pipeline-detail {
+  color: #93a2b3;
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.gf-pipeline-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #677687;
+}
+
+.gf-pipeline-meter {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.gf-pipeline-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--color-mint);
+  transition: width 150ms ease-out;
+}
+
+.gf-pipeline-glyph {
+  align-items: center;
+  text-align: center;
+  border-color: rgb(185 245 208 / 0.16);
+  background: rgb(185 245 208 / 0.035);
+}
+
+.gf-pipeline-character {
+  display: grid;
+  min-height: 24px;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.gf-glyph-space {
+  width: 14px;
+  height: 14px;
+  border: 1px dashed #677687;
+  border-radius: 3px;
+}
+
+.gf-pipeline-note {
+  margin: 9px 0 0;
+  color: #93a2b3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@container (max-width: 300px) {
+  .gf-wave-terms > span {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .gf-wave-terms > span > span {
+    max-width: 100%;
+  }
+  .gf-equation-aligned {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+  .gf-equation-aligned > span:nth-child(even) {
+    padding-left: 1em;
+    margin-bottom: 0.35em;
+  }
+  .gf-pipeline-cell {
+    padding: 10px 8px;
+  }
+  .gf-pipeline-caption,
+  .gf-pipeline-detail {
+    font-size: 10px;
+  }
+  .gf-pipeline-number {
+    font-size: 14px;
+  }
+}
+
+@media (max-height: 800px) and (min-width: 1280px) {
+  .gf-equation-card .gf-equation-reading {
+    display: none;
+  }
+  .gf-equation-card .gf-equation-surface {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}
+
+@media (max-height: 960px) {
+  .gf-equation-anchor--intro .gf-equation-reading {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 850px) {
+  .gf-equation-anchor--intro .gf-equation-card {
+    display: none;
+  }
+  .gf-equation-anchor--intro .gf-equation-pill {
+    display: inline-flex;
+  }
+}

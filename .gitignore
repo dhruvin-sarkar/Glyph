@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-single
+*.local
+.vite
+coverage
+.DS_Store
+Thumbs.db
+/screenshots
+/test-results

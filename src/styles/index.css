@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * GLYPHFIELD design tokens — Tailwind v4, CSS-first configuration.
+ *
+ * Generated utilities include: bg-bg, bg-surface, bg-raised, text-ink, text-muted,
+ * text-faint, text-mint, text-ice, border-line, border-line-strong, font-sans,
+ * font-mono, ease-expo, ease-quint, ease-in-out-quart — plus the custom
+ * utilities defined below: glass, micro, tabular.
+ * ───────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-bg: #060a10;
+  --color-surface: #0c121b;
+  --color-raised: #111924;
+  --color-ink: #e9edf2;
+  --color-muted: #788696;
+  --color-faint: #3d4855;
+  --color-mint: #b9f5d0;
+  --color-ice: #a8c7ff;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.12);
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* Layout tokens — see docs/SPEC.md §7 (Layout map). */
+:root {
+  --gutter: 28px;
+  --topbar-h: 64px;
+  --panel-w: 348px;
+  --dock-h: 48px;
+}
+@media (max-width: 1279px) {
+  :root {
+    --gutter: 20px;
+    --panel-w: 312px;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --gutter: 16px;
+    --topbar-h: 52px;
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  ::selection {
+    background: rgb(185 245 208 / 0.22);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 1px solid var(--color-mint);
+    outline-offset: 3px;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Frosted instrument panel. */
+@utility glass {
+  background: linear-gradient(180deg, rgb(17 25 36 / 0.66), rgb(10 15 22 / 0.6));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 30px 80px -30px rgb(0 0 0 / 0.85);
+}
+
+/* Tiny uppercase technical label. */
+@utility micro {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Stable-width numerals with a slashed zero. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

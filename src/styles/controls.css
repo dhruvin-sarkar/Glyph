@@ -1,0 +1,849 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  GLYPHFIELD · instrument controls (docs/SPEC.md §6–8)
+ *  Owner: ui-controls. Imported by ParameterPanel, ShortcutsOverlay and every
+ *  control in src/components/controls/.
+ *
+ *  Plain, unlayered CSS on purpose: it must beat Tailwind's preflight (@layer
+ *  base) on <input type=range> and <button>. These classes never share a
+ *  property with a Tailwind utility on the same element.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --gf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gf-mint: var(--color-mint, #b9f5d0);
+  --gf-ink: var(--color-ink, #e9edf2);
+  --gf-muted: var(--color-muted, #788696);
+  --gf-faint: var(--color-faint, #3d4855);
+  --gf-bg: var(--color-bg, #060a10);
+  --gf-mono: var(--font-mono, "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace);
+}
+
+/* ─── Panel placement (SPEC §7) ─────────────────────────────────────────── */
+
+.gf-panel-anchor {
+  position: absolute;
+  top: calc(var(--topbar-h, 64px) + 16px);
+  right: var(--gutter, 28px);
+  width: var(--panel-w, 348px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.gf-panel {
+  max-height: calc(100vh - var(--topbar-h, 64px) - 132px);
+  max-height: calc(100dvh - var(--topbar-h, 64px) - 132px);
+  transform-origin: top right;
+}
+
+.gf-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 20px;
+}
+
+.gf-panel-header-sheet {
+  padding-top: 8px;
+}
+
+.gf-panel-title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 9px;
+  color: var(--gf-ink);
+  font-size: 18px;
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.gf-panel-index {
+  color: var(--gf-muted);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.gf-panel-header-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: -3px -4px 0 0;
+}
+
+.gf-param-list {
+  padding: 18px 13px 14px 22px;
+}
+
+.gf-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.gf-group-heading .micro {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.gf-group-heading-display {
+  margin-top: 16px;
+}
+
+.gf-pill {
+  transform-origin: top right;
+}
+
+/* Mobile: a sheet that rises from the PARAMETERS pill, just above the dock. */
+.gf-sheet,
+.gf-sheet-pill {
+  position: absolute;
+  bottom: calc(var(--gutter, 16px) + 60px + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  transform-origin: bottom right;
+}
+
+.gf-sheet {
+  left: var(--gutter, 16px);
+  right: var(--gutter, 16px);
+  max-height: min(70vh, calc(100vh - 156px));
+  max-height: min(70dvh, calc(100dvh - 156px));
+  border-radius: 22px;
+}
+
+.gf-sheet-pill {
+  right: var(--gutter, 16px);
+}
+
+.gf-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 9px 0 3px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.gf-sheet-handle:active {
+  cursor: grabbing;
+}
+
+.gf-sheet-handle::before {
+  content: "";
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.18);
+}
+
+/* ─── Scroll area with a hairline scrollbar ─────────────────────────────── */
+
+.gf-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Reserve the gutter so switching experiments never shifts the controls sideways. */
+  scrollbar-gutter: stable;
+}
+
+/* .gf-scrollbar: the hairline scrollbar alone, for containers that should not reserve a gutter. */
+.gf-scroll::-webkit-scrollbar,
+.gf-scrollbar::-webkit-scrollbar {
+  width: 9px;
+}
+
+.gf-scroll::-webkit-scrollbar-track,
+.gf-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 9px track − 2 × 4px transparent border = a 1px hairline thumb. */
+.gf-scroll::-webkit-scrollbar-thumb,
+.gf-scrollbar::-webkit-scrollbar-thumb {
+  border: 4px solid transparent;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.16) padding-box;
+}
+
+.gf-scroll::-webkit-scrollbar-thumb:hover,
+.gf-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.32);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .gf-scroll,
+  .gf-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+  }
+}
+
+/* Scroll edges: where rows hide above or below, the list dissolves into the glass
+ * instead of being cut — a hint that there is more. The fades are driven by the
+ * scroll position itself (a scroll-driven animation): 36px at the bottom while
+ * more lies below, 24px at the top once scrolled. A list that fits has an
+ * inactive scroll timeline, so both fades stay at 0. Browsers without scroll
+ * timelines keep a plain hard edge. */
+@property --gf-fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --gf-fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes gf-scroll-edges {
+  0% {
+    --gf-fade-top: 0px;
+    --gf-fade-bottom: 36px;
+  }
+  6% {
+    --gf-fade-top: 24px;
+  }
+  94% {
+    --gf-fade-bottom: 36px;
+  }
+  100% {
+    --gf-fade-top: 24px;
+    --gf-fade-bottom: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .gf-scroll {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--gf-fade-top),
+      #000 calc(100% - var(--gf-fade-bottom)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--gf-fade-top),
+      #000 calc(100% - var(--gf-fade-bottom)),
+      transparent 100%
+    );
+    /* the shorthand resets the timeline, so the timeline must come after it */
+    animation: gf-scroll-edges linear both;
+    animation-timeline: scroll(self);
+  }
+}
+
+/* ─── Parameter rows: stable, readable context on every input method ───── */
+
+.gf-row {
+  padding: 12px 0 7px;
+}
+
+.gf-row-heading {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gf-param-label {
+  color: rgb(233 237 242 / 0.92);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.gf-row:is(:hover, :focus-within) .gf-param-label {
+  color: var(--gf-ink);
+}
+
+.gf-param-symbol {
+  color: var(--gf-muted);
+  font-size: 12px;
+}
+
+.gf-param-readout {
+  color: var(--gf-ink);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.gf-param-hint {
+  margin-top: 2px;
+  color: #96a3b2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gf-row-control {
+  margin-top: 2px;
+}
+
+.gf-row-select .gf-row-control {
+  margin-top: 10px;
+}
+
+.gf-row-toggle {
+  padding-bottom: 12px;
+}
+
+.gf-row-toggle .gf-param-hint {
+  max-width: 27ch;
+}
+
+.gf-toggle-value {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.gf-toggle-state {
+  min-width: 3ch;
+  color: var(--gf-muted);
+  font: 400 10px/1 var(--gf-mono);
+}
+
+/* ─── Slider: a native <input type=range>, re-drawn as an instrument ────── */
+
+.gf-slider {
+  position: relative;
+  height: 32px;
+}
+
+.gf-range {
+  --gf-track: rgb(255 255 255 / 0.12);
+  /* lit span [--a, --b] of the track, set inline from the value */
+  --gf-track-fill: linear-gradient(
+    to right,
+    var(--gf-track) 0 var(--a, 0%),
+    var(--gf-mint) var(--a, 0%) var(--b, 0%),
+    var(--gf-track) var(--b, 0%) 100%
+  );
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.gf-range:hover,
+.gf-range:focus-visible {
+  --gf-track: rgb(255 255 255 / 0.2);
+}
+
+.gf-range:focus,
+.gf-range:focus-visible {
+  outline: none;
+}
+
+.gf-range::-webkit-slider-runnable-track {
+  height: 2px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--gf-track-fill);
+}
+
+/* A small round handle is easier to locate than a hairline needle. */
+.gf-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border: 2px solid var(--gf-bg);
+  border-radius: 50%;
+  background: var(--gf-ink);
+  box-shadow: 0 0 0 0 rgb(185 245 208 / 0);
+  transition:
+    background-color 0.25s var(--gf-ease),
+    box-shadow 0.3s var(--gf-ease);
+}
+
+.gf-range::-moz-range-track {
+  height: 2px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--gf-track-fill);
+}
+
+.gf-range::-moz-range-progress {
+  height: 1px;
+  background: transparent;
+}
+
+.gf-range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--gf-bg);
+  border-radius: 50%;
+  background: var(--gf-ink);
+  box-shadow: 0 0 0 0 rgb(185 245 208 / 0);
+  transition:
+    background-color 0.25s var(--gf-ease),
+    box-shadow 0.3s var(--gf-ease);
+}
+
+/* WebKit and Gecko selectors stay in separate rules: one unknown selector voids a whole list. */
+.gf-range:hover::-webkit-slider-thumb,
+.gf-range:active::-webkit-slider-thumb {
+  background: var(--gf-mint);
+  box-shadow: 0 0 10px 1px rgb(185 245 208 / 0.55);
+}
+
+.gf-range:hover::-moz-range-thumb,
+.gf-range:active::-moz-range-thumb {
+  background: var(--gf-mint);
+  box-shadow: 0 0 10px 1px rgb(185 245 208 / 0.55);
+}
+
+/* Keyboard focus: a clear mint ring around the handle. */
+.gf-range:focus-visible::-webkit-slider-thumb {
+  background: var(--gf-mint);
+  box-shadow:
+    0 0 0 3px var(--gf-bg),
+    0 0 0 4px rgb(185 245 208 / 0.9),
+    0 0 16px 2px rgb(185 245 208 / 0.4);
+}
+
+.gf-range:focus-visible::-moz-range-thumb {
+  background: var(--gf-mint);
+  box-shadow:
+    0 0 0 3px var(--gf-bg),
+    0 0 0 4px rgb(185 245 208 / 0.9),
+    0 0 16px 2px rgb(185 245 208 / 0.4);
+}
+
+/* min / default / max ticks under the track (pointer-transparent) */
+.gf-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 23px;
+  height: 5px;
+  pointer-events: none;
+}
+
+/* Align the ticks with the centre of the 12px thumb along its travel. */
+.gf-tick {
+  position: absolute;
+  top: 0;
+  left: calc(5.5px + var(--t, 0) * (100% - 12px));
+  width: 1px;
+  height: 3px;
+  background: rgb(255 255 255 / 0.2);
+}
+
+.gf-tick[data-default] {
+  height: 5px;
+  background: rgb(185 245 208 / 0.4);
+}
+
+@media (pointer: coarse) {
+  .gf-slider,
+  .gf-range {
+    height: 40px;
+  }
+
+  .gf-ticks {
+    top: 27px;
+  }
+}
+
+/* ─── Toggle: a quiet pill with a generous invisible target ────────────── */
+
+.gf-switch {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.03);
+  transition:
+    background-color 0.3s var(--gf-ease),
+    border-color 0.3s var(--gf-ease);
+}
+
+/* Invisible hit area: 44 × 40. */
+.gf-switch::before {
+  content: "";
+  position: absolute;
+  inset: -10px -5px;
+}
+
+.gf-switch:hover {
+  border-color: rgb(255 255 255 / 0.26);
+}
+
+.gf-switch-dot {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: rgb(233 237 242 / 0.5);
+  transition:
+    transform 0.4s var(--gf-ease),
+    background-color 0.3s var(--gf-ease),
+    box-shadow 0.3s var(--gf-ease);
+}
+
+.gf-switch[aria-checked="true"] {
+  border-color: rgb(185 245 208 / 0.5);
+  background: rgb(185 245 208 / 0.12);
+}
+
+/* travel = inner width 32 − 2 × 4px inset − 10px dot = 14px */
+.gf-switch[aria-checked="true"] .gf-switch-dot {
+  transform: translateX(14px);
+  background: var(--gf-mint);
+  box-shadow: 0 0 6px rgb(185 245 208 / 0.25);
+}
+
+/* ─── Segmented: options with a sliding indicator ───────────────────────── */
+
+.gf-seg {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 0.02);
+}
+
+.gf-seg-indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--n, 2));
+  border-radius: 8px;
+  background: rgb(185 245 208 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(185 245 208 / 0.3);
+  /* translateX(100%) moves by the indicator's own width: one option per step */
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 0.45s var(--gf-ease);
+  pointer-events: none;
+}
+
+.gf-seg-option {
+  position: relative;
+  min-height: 36px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gf-muted);
+  font: 500 12px/1.2 var(--font-sans, system-ui, sans-serif);
+  letter-spacing: 0;
+  white-space: nowrap;
+  transition: color 0.25s var(--gf-ease);
+}
+
+.gf-seg-option:hover {
+  color: var(--gf-ink);
+}
+
+.gf-seg-option[aria-checked="true"] {
+  color: var(--gf-mint);
+}
+
+.gf-seg-option:focus-visible {
+  outline-offset: 1px;
+}
+
+/* ─── Steps: integer notches on a ruler (half-twists 0…7) ───────────────── */
+
+.gf-steps-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr));
+  height: 44px;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* the ruler's baseline */
+.gf-steps-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 32px;
+  height: 1px;
+  background: rgb(255 255 255 / 0.1);
+  pointer-events: none;
+}
+
+.gf-notch {
+  position: relative;
+  display: block;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gf-muted);
+  font: 500 12px/1 var(--gf-mono);
+  font-variant-numeric: tabular-nums;
+  transition:
+    color 0.2s var(--gf-ease),
+    text-shadow 0.3s var(--gf-ease);
+}
+
+.gf-notch:hover {
+  color: var(--gf-ink);
+}
+
+.gf-notch[aria-checked="true"] {
+  color: var(--gf-mint);
+  text-shadow: 0 0 12px rgb(185 245 208 / 0.45);
+}
+
+.gf-notch:focus-visible {
+  outline-offset: 0;
+}
+
+.gf-notch-num {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  line-height: 14px;
+  text-align: center;
+}
+
+.gf-notch-tick {
+  position: absolute;
+  top: 26px;
+  left: calc(50% - 0.5px);
+  width: 1px;
+  height: 6px;
+  background: rgb(255 255 255 / 0.24);
+  transition: opacity 0.2s linear;
+}
+
+.gf-notch[aria-checked="true"] .gf-notch-tick {
+  opacity: 0;
+}
+
+/* odd n → one side: a tiny mint dot under the ruler */
+.gf-notch-dot {
+  position: absolute;
+  top: 37px;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgb(185 245 208 / 0.5);
+  transition:
+    background-color 0.3s var(--gf-ease),
+    box-shadow 0.3s var(--gf-ease);
+}
+
+.gf-notch[aria-checked="true"] .gf-notch-dot {
+  background: var(--gf-mint);
+  box-shadow: 0 0 6px rgb(185 245 208 / 0.8);
+}
+
+/* the selected notch: a 2px mint needle that glides between integers */
+.gf-steps-cursor {
+  position: absolute;
+  top: 19px;
+  left: 0;
+  width: calc(100% / var(--n, 8));
+  height: 13px;
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 0.45s var(--gf-ease);
+  pointer-events: none;
+}
+
+.gf-steps-cursor::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--gf-mint);
+  box-shadow: 0 0 10px 1px rgb(185 245 208 / 0.5);
+}
+
+.gf-parity-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ─── Footer: commands read as one quiet instrument strip ─────────────── */
+
+.gf-panel-footer {
+  padding: 16px 22px 18px;
+}
+
+.gf-command-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.015);
+}
+
+.gf-command {
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  color: rgb(233 237 242 / 0.85);
+  text-align: left;
+  transition: color 0.2s var(--gf-ease), background-color 0.2s var(--gf-ease);
+}
+
+.gf-command + .gf-command {
+  border-left: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.gf-command:hover {
+  background: rgb(255 255 255 / 0.045);
+  color: var(--gf-ink);
+}
+
+.gf-command:focus-visible {
+  outline-offset: -3px;
+}
+
+.gf-command-active {
+  background: rgb(185 245 208 / 0.06);
+  color: var(--gf-mint);
+}
+
+.gf-command-label {
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.gf-command-compact {
+  min-height: 44px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 5px;
+}
+
+.gf-system-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 17px;
+}
+
+.gf-system-line > div {
+  flex: 1;
+}
+
+.gf-system-label {
+  color: rgb(233 237 242 / 0.78);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gf-system-hint {
+  margin-top: 1px;
+  color: var(--gf-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.gf-system-quality {
+  width: 4ch;
+  flex: none;
+  color: rgb(233 237 242 / 0.8);
+  font-size: 11px;
+  line-height: 1;
+  text-align: right;
+}
+
+@media (max-width: 767px) {
+  .gf-panel-header,
+  .gf-panel-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .gf-param-list {
+    padding-left: 18px;
+    padding-right: 9px;
+  }
+
+  .gf-seg-option {
+    min-height: 40px;
+  }
+}
+
+/* ─── Shortcuts overlay: two balanced columns, column-major ─────────────── */
+
+.gf-keys {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .gf-keys {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--rows, 5), auto);
+    grid-auto-flow: column;
+    column-gap: 36px;
+  }
+}
+
+/* ─── Windows High Contrast: fall back to native drawing ────────────────── */
+
+@media (forced-colors: active) {
+  .gf-range {
+    -webkit-appearance: auto;
+    appearance: auto;
+  }
+
+  .gf-switch-dot,
+  .gf-steps-cursor::before {
+    forced-color-adjust: none;
+    background: ButtonText;
+  }
+
+  .gf-switch[aria-checked="true"] .gf-switch-dot {
+    background: Highlight;
+  }
+}
