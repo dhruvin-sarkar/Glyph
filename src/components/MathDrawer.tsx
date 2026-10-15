@@ -123,8 +123,8 @@ function DrawerLayer({ onClose }: { onClose: () => void }) {
     const heading = scroller?.querySelector<HTMLElement>(`#glyph-math-${String(index + 1).padStart(2, '0')}`);
     if (!scroller || !heading) return;
     const top = heading.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 22;
-    scroller.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
     heading.focus({ preventScroll: true });
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
   };
 
   return (
